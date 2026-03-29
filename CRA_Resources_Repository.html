@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRA Resources Repository</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; background: #fff; color: #1a1a18; line-height: 1.5; padding: 24px; }
+  :root {
+    --accent: #2E6B4F; --dark: #1A3D2B; --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.25); --bg-secondary: #f7f7f5;
+    --text-secondary: #666; --radius-md: 8px; --radius-lg: 12px;
+  }
+
+  .page-header { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+  .page-title { font-size: 22px; font-weight: 500; color: #1a1a18; margin-bottom: 4px; }
+  .page-sub { font-size: 13px; color: var(--text-secondary); }
+
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: flex-end; }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .filter-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.07em; }
+  select {
+    padding: 7px 10px; font-size: 13px; border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-md); background: #fff; color: #1a1a18;
+    cursor: pointer; min-width: 160px; font-family: inherit;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+
+  .results-bar {
+    font-size: 12px; color: var(--text-secondary); margin-bottom: 1rem;
+    padding-bottom: 0.75rem; border-bottom: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .reset-btn {
+    font-size: 12px; color: var(--accent); cursor: pointer;
+    background: none; border: none; font-family: inherit; padding: 0;
+  }
+  .reset-btn:hover { text-decoration: underline; }
+
+  .table-wrap { width: 100%; }
+
+  .resource-row {
+    display: grid;
+    grid-template-columns: minmax(0,2fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,2.5fr) 80px;
+    gap: 0;
+    border-bottom: 0.5px solid var(--border);
+    align-items: start;
+    transition: background 0.1s;
+  }
+  .resource-row:hover { background: var(--bg-secondary); }
+  .resource-row.header-row {
+    background: var(--dark);
+    border-bottom: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+  .col { padding: 11px 12px; font-size: 13px; color: #1a1a18; }
+  .col-hdr { padding: 9px 12px; font-size: 11px; font-weight: 500; color: #fff; text-transform: uppercase; letter-spacing: 0.07em; }
+
+  .resource-name { font-weight: 500; font-size: 13px; }
+  .resource-question { font-size: 12px; color: var(--text-secondary); margin-top: 3px; line-height: 1.4; font-style: italic; }
+  .hazard-text { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+  .scope-text { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+  .use-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+  .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .type-public    { background: #E1F5EE; color: #085041; }
+  .type-private   { background: #E6F1FB; color: #0C447C; }
+  .type-nonprofit { background: #FAEEDA; color: #633806; }
+
+  .link-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 10px; border-radius: var(--radius-md);
+    font-size: 12px; font-weight: 500; color: var(--accent);
+    border: 0.5px solid var(--accent); background: none;
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+    transition: background 0.12s; font-family: inherit;
+  }
+  .link-btn:hover { background: #E1F5EE; }
+
+  .empty { padding: 2.5rem; text-align: center; font-size: 13px; color: var(--text-secondary); font-style: italic; }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">Resources repository</div>
+  <div class="page-sub">21 climate risk tools and data sources — filter by type or hazard to find what you need.</div>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <div class="filter-label">Type</div>
+    <select id="f-type" onchange="render()">
+      <option value="">All types</option>
+      <option>Public</option>
+      <option>Private</option>
+      <option>Non-profit</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <div class="filter-label">Hazard</div>
+    <select id="f-hazard" onchange="render()">
+      <option value="">All hazards</option>
+      <option>Flood</option>
+      <option>Heat</option>
+      <option>Wind</option>
+      <option>Drought</option>
+      <option>Earthquake</option>
+      <option>Wildfire</option>
+      <option>Sea-level rise</option>
+      <option>Storms</option>
+      <option>Landslide</option>
+      <option>All Hazards</option>
+    </select>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1D9E75;"></div>Public</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4A7C6F;"></div>Private</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#BA7517;"></div>Non-profit</div>
+</div>
+
+<div class="results-bar">
+  <span id="results-count">Showing 21 resources</span>
+  <button class="reset-btn" onclick="resetFilters()">Clear filters</button>
+</div>
+
+<div class="table-wrap">
+  <div class="resource-row header-row">
+    <div class="col-hdr">Resource</div>
+    <div class="col-hdr">Hazards covered</div>
+    <div class="col-hdr">Type</div>
+    <div class="col-hdr">Use</div>
+    <div class="col-hdr"></div>
+  </div>
+  <div id="rows"></div>
+  <div class="empty" id="empty" style="display:none">No resources match the selected filters.</div>
+</div>
+
+<script>
+const DATA = [
+  {name:"Building Resilience Index (IFC)",hazard:"Flood, Wind, Heat, Seismic",type:"Public",category:"Integrated Platform",scope:"Global",use:"Building-level physical risk + resilience scoring",question:"How should the building respond?",link:"https://bri.ifc.org"},
+  {name:"CLIMADA",hazard:"Flood, Wind, Heat, Drought, Storms",type:"Public",category:"Integrated Platform (Risk Modeling)",scope:"Global",use:"End-to-end risk modeling (hazard → exposure → impact → loss)",question:"What is the quantified risk?",link:"https://www.climada.tech"},
+  {name:"Climate Vulnerability Index (CVI)",hazard:"All Hazards",type:"Public",category:"Vulnerability",scope:"Global",use:"Combined socio-environmental vulnerability assessment",question:"Who/what is most vulnerable?",link:"https://cvi-heritage.org"},
+  {name:"Climate Watch (WRI)",hazard:"Indirect (Policy/Emissions drivers)",type:"Public",category:"Emissions / Transition",scope:"Global",use:"Emissions, policies, NDCs",question:"What regulations/policies affect the project?",link:"https://www.climatewatchdata.org"},
+  {name:"Copernicus Climate Data Store",hazard:"Temperature, Precipitation, Wind, Sea Level, etc.",type:"Public",category:"Climate Data (Raw)",scope:"Global",use:"Historical + future climate projections (ERA5, CMIP)",question:"What is the climate baseline and future trend?",link:"https://cds.climate.copernicus.eu"},
+  {name:"IIASA Scenario Explorer",hazard:"Transition + Physical drivers",type:"Public",category:"Scenarios",scope:"Global",use:"SSP / NGFS scenario datasets",question:"What future scenarios should we design for?",link:"https://data.ene.iiasa.ac.at/ngfs"},
+  {name:"ISIMIP",hazard:"Flood, Heat, Drought, Agriculture impacts",type:"Public",category:"Impact Models",scope:"Global",use:"Climate impact modeling (sector-based)",question:"How do hazards translate into impacts?",link:"https://www.isimip.org"},
+  {name:"NCAR",hazard:"Temperature, Precipitation, Extreme Weather",type:"Public",category:"Climate Data / Models",scope:"Global",use:"Climate modeling + atmospheric datasets",question:"Why will climate change in the future?",link:"https://ncar.ucar.edu/what-we-offer/models"},
+  {name:"NCEP (NOAA)",hazard:"Temperature, precipitation, storms",type:"Public",category:"Climate Data",scope:"US / Global",use:"Long-term atmospheric datasets (reanalysis)",question:"What are long-term atmospheric trends?",link:"https://www.ncep.noaa.gov"},
+  {name:"NGFS Scenarios",hazard:"Transition + Physical risk drivers",type:"Public",category:"Transition Scenarios",scope:"Global",use:"TCFD-aligned climate scenarios",question:"What financial/regulatory scenarios apply?",link:"https://www.ngfs.net/ngfs-scenarios-portal/"},
+  {name:"NOAA",hazard:"Flood, Hurricanes, Heat, Drought, Sea-level rise",type:"Public",category:"Climate Data",scope:"US (some global)",use:"Observed + modeled climate data",question:"What is happening locally?",link:"https://www.noaa.gov"},
+  {name:"ThinkHazard!",hazard:"Flood, Cyclone, Earthquake, Drought, Landslide",type:"Public",category:"Hazard Screening",scope:"Global",use:"Rapid multi-hazard screening",question:"What hazards exist at a high level?",link:"https://thinkhazard.org"},
+  {name:"UNEP FI Risk Tool Dashboard",hazard:"All Hazards (Meta)",type:"Public",category:"Meta-platform",scope:"Global",use:"Directory of climate risk tools",question:"What tools should we use?",link:"https://www.unepfi.org/themes/climate-change/the-sustainability-risk-tool-dashboard/"},
+  {name:"US Climate Vulnerability Index",hazard:"All Hazards",type:"Public",category:"Vulnerability",scope:"US",use:"Combined socio-environmental vulnerability",question:"Who is most at risk locally?",link:"https://map.climatevulnerabilityindex.org"},
+  {name:"World Bank Climate Change Knowledge Portal (CCKP)",hazard:"Temperature, precipitation, drought, extremes",type:"Public",category:"Climate + Indicators",scope:"Global",use:"Country-level climate data + projections",question:"How is climate evolving at country scale?",link:"https://climateknowledgeportal.worldbank.org"},
+  {name:"Bloomberg (Climate / ESG Data)",hazard:"Physical risks (flood, heat, storms), transition risks",type:"Private",category:"Financial + Risk Platform",scope:"Global",use:"Climate risk analytics, ESG data, financial exposure, Climate VaR",question:"What is the financial impact of climate risk?",link:"https://www.bloomberg.com/professional/product/climate-data/"},
+  {name:"Climate Central",hazard:"Heat, sea-level rise, flooding, extreme weather",type:"Non-profit",category:"Climate Data + Visualization",scope:"Global (strong US focus)",use:"Climate projections + visual tools (SLR maps, heat trends)",question:"How will climate change affect this location visually?",link:"https://www.climatecentral.org"},
+  {name:"Drees & Sommer",hazard:"All hazards (project-specific)",type:"Private",category:"Consulting / Integrated Platform",scope:"Global (Europe focus)",use:"Climate risk + ESG + sustainable design consulting",question:"How do we integrate climate risk into design + development?",link:"https://www.dreso.com"},
+  {name:"Moody's (Climate Risk / RMS)",hazard:"Flood, wind, heat, wildfire, sea-level rise",type:"Private",category:"Risk Modeling + Financial Analytics",scope:"Global",use:"Physical risk modeling + financial exposure (asset + portfolio)",question:"What is the risk exposure and financial loss potential?",link:"https://www.moodys.com/web/en/us/capabilities/climate-risk.html"},
+  {name:"Munich Re",hazard:"Flood, storm, wildfire, earthquake, all natural hazards",type:"Private",category:"Risk Data + Reinsurance Analytics",scope:"Global",use:"Catastrophe modeling, hazard maps, risk assessment",question:"What are the probabilities and severity of hazards?",link:"https://www.munichre.com"},
+  {name:"Swiss Re",hazard:"Flood, heat, storms, water stress, air quality, biodiversity",type:"Private",category:"Risk Data + Integrated Platform",scope:"Global",use:"Climate risk scoring, site-level hazard analysis, scenario modeling",question:"What is the overall risk score and exposure at this site?",link:"https://corporatesolutions.swissre.com/insurance-services/climate-risk-services.html"},
+];
+
+const HAZARD_KEYWORDS = {
+  "Flood":["flood","flooding"],"Heat":["heat","temperature"],
+  "Wind":["wind"],"Drought":["drought"],
+  "Earthquake":["earthquake","seismic"],"Wildfire":["wildfire","fire"],
+  "Sea-level rise":["sea-level","sea level","slr"],
+  "Storms":["storm","cyclone","hurricane","extreme weather"],
+  "Landslide":["landslide"],"All Hazards":["all hazard"],
+};
+
+function typeBadge(t){
+  if(t==='Public') return '<span class="type-badge type-public">Public</span>';
+  if(t==='Private') return '<span class="type-badge type-private">Private</span>';
+  return '<span class="type-badge type-nonprofit">Non-profit</span>';
+}
+
+function matches(row, typeF, hazardF){
+  if(typeF && !row.type.toLowerCase().includes(typeF.toLowerCase())) return false;
+  if(hazardF){
+    const kws = HAZARD_KEYWORDS[hazardF]||[hazardF.toLowerCase()];
+    const hay = row.hazard.toLowerCase();
+    if(!kws.some(k=>hay.includes(k))) return false;
+  }
+  return true;
+}
+
+function render(){
+  const typeF = document.getElementById('f-type').value;
+  const hazardF = document.getElementById('f-hazard').value;
+  const filtered = DATA.filter(r=>matches(r,typeF,hazardF));
+  const container = document.getElementById('rows');
+  const empty = document.getElementById('empty');
+  document.getElementById('results-count').textContent = `Showing ${filtered.length} of ${DATA.length} resources`;
+  if(!filtered.length){ container.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  container.innerHTML = filtered.map((r,i)=>`
+    <div class="resource-row" style="background:${i%2===0?'#fff':'#f7f7f5'}">
+      <div class="col">
+        <div class="resource-name">${r.name}</div>
+        <div class="resource-question">${r.question}</div>
+      </div>
+      <div class="col"><div class="hazard-text">${r.hazard}</div></div>
+      <div class="col">
+        ${typeBadge(r.type)}
+        <div class="scope-text">${r.scope}</div>
+      </div>
+      <div class="col"><div class="use-text">${r.use}</div></div>
+      <div class="col" style="padding-top:12px;">
+        <a class="link-btn" href="${r.link}" target="_blank" rel="noopener">Visit ↗</a>
+      </div>
+    </div>`).join('');
+}
+
+function resetFilters(){
+  document.getElementById('f-type').value='';
+  document.getElementById('f-hazard').value='';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

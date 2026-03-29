@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRA Hazard Matrix Wizard</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; background: #fff; color: #1a1a18; line-height: 1.5; padding: 24px; }
+  :root {
+    --accent: #2E6B4F; --dark: #1A3D2B; --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.25); --bg-secondary: #f7f7f5;
+    --text-secondary: #666; --radius-md: 8px; --radius-lg: 12px;
+  }
+  .step-bar { display: flex; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 0.5px solid var(--border); }
+  .step { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  .step.active { color: var(--accent); font-weight: 500; }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border-strong); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+  .step.active .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .step.done .step-num { background: var(--bg-secondary); }
+  .step-line { flex: 1; height: 0.5px; background: var(--border); margin: 0 8px; }
+  .panel { display: none; } .panel.visible { display: block; }
+  .panel-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem; }
+  .panel-title { font-size: 20px; font-weight: 500; color: #1a1a18; margin-bottom: 0.5rem; line-height: 1.2; }
+  .panel-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
+  .city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .city-btn { padding: 14px 12px; border: 0.5px solid var(--border-strong); border-radius: var(--radius-lg); background: #fff; cursor: pointer; text-align: left; transition: border-color 0.15s; }
+  .city-btn:hover { border-color: var(--accent); }
+  .city-btn.sel { border: 2px solid var(--accent); }
+  .city-name { font-size: 13px; font-weight: 500; }
+  .city-region { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .other-row { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 0.5px dashed var(--border-strong); border-radius: var(--radius-lg); margin-bottom: 1.5rem; cursor: pointer; transition: border-color 0.15s; }
+  .other-row:hover { border-color: var(--accent); }
+  .other-row.sel { border: 2px dashed var(--accent); }
+  .other-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .phase-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .phase-card { padding: 1.1rem; border: 0.5px solid var(--border-strong); border-radius: var(--radius-lg); background: #fff; cursor: pointer; transition: border-color 0.15s; }
+  .phase-card:hover { border-color: var(--accent); }
+  .phase-card.sel { border: 2px solid var(--accent); }
+  .ptag { display: inline-block; font-size: 10px; font-weight: 500; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; }
+  .t-sd{background:#E1F5EE;color:#085041;} .t-dd{background:#E0EDE8;color:#2D5A4A;} .t-cd{background:#D6E8E1;color:#1A3D2B;} .t-all{background:#F1EFE8;color:#444441;}
+  .phase-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .phase-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .next-btn { padding: 10px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+  .next-btn:disabled { opacity: 0.35; cursor: default; }
+  .next-btn:not(:disabled):hover { opacity: 0.88; }
+  .back-btn { padding: 10px 20px; background: none; color: var(--text-secondary); border: 0.5px solid var(--border-strong); border-radius: var(--radius-md); font-size: 13px; cursor: pointer; margin-right: 8px; transition: background 0.12s; }
+  .back-btn:hover { background: var(--bg-secondary); }
+  .ext-links { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+  .ext-link { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: #fff; text-decoration: none; color: inherit; transition: background 0.12s; }
+  .ext-link:hover { background: var(--bg-secondary); }
+  .ext-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .lt { font-size: 13px; font-weight: 500; }
+  .lu { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .hchips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .hchip { padding: 7px 14px; border: 0.5px solid var(--border-strong); border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--text-secondary); background: #fff; cursor: pointer; transition: all 0.12s; user-select: none; }
+  .hchip:hover { border-color: var(--accent); color: var(--accent); }
+  .hchip.picked { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .hlevel-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: #fff; margin-bottom: 6px; }
+  .haz-label { font-size: 13px; font-weight: 500; flex: 1; min-width: 80px; }
+  .lpills { display: flex; gap: 4px; flex-wrap: wrap; }
+  .lpill { padding: 4px 9px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; border: 1.5px solid transparent; color: var(--text-secondary); background: var(--bg-secondary); transition: all 0.1s; }
+  .p-vh{background:#8B0000!important;color:#fff!important;border-color:#8B0000!important;}
+  .p-h{background:#C62828!important;color:#fff!important;border-color:#C62828!important;}
+  .p-m{background:#E65100!important;color:#fff!important;border-color:#E65100!important;}
+  .p-l{background:#1D6B52!important;color:#fff!important;border-color:#1D6B52!important;}
+  .p-vl{background:#1565C0!important;color:#fff!important;border-color:#1565C0!important;}
+  .empty-note { font-size: 13px; color: var(--text-secondary); font-style: italic; padding: 0.75rem 0; }
+  .result-header { padding: 1.25rem; background: var(--dark); border-radius: var(--radius-lg); margin-bottom: 1rem; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .result-city { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .result-title { font-size: 18px; font-weight: 500; color: #fff; }
+  .pbadge { font-size: 11px; font-weight: 500; padding: 4px 12px; border-radius: 4px; align-self: flex-start; margin-top: 4px; white-space: nowrap; }
+  .pb-sd{background:#1D9E75;color:#fff;} .pb-dd{background:#4A7C6F;color:#fff;} .pb-cd{background:#2D5A4A;color:#fff;} .pb-all{background:#5F5E5A;color:#fff;}
+  .hint { font-size: 12px; color: var(--text-secondary); margin-bottom: 0.75rem; font-style: italic; }
+  .haz-card { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: #fff; margin-bottom: 8px; overflow: hidden; }
+  .haz-card-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.12s; user-select: none; }
+  .haz-card-header:hover { background: var(--bg-secondary); }
+  .haz-card-header.open { background: var(--bg-secondary); border-bottom: 0.5px solid var(--border); }
+  .haz-card-name { font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .lbadge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 4px; color: #fff; white-space: nowrap; flex-shrink: 0; }
+  .b-vh{background:#8B0000;} .b-h{background:#C62828;} .b-m{background:#E65100;} .b-l{background:#1D6B52;} .b-vl{background:#1565C0;}
+  .card-preview { font-size: 12px; color: var(--text-secondary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 8px; }
+  .toggle-arrow { font-size: 12px; color: var(--text-secondary); transition: transform 0.2s; flex-shrink: 0; }
+  .toggle-arrow.open { transform: rotate(180deg); }
+  .haz-card-body { display: none; }
+  .haz-card-body.open { display: block; }
+  .phase-section { padding: 14px 16px; border-bottom: 0.5px solid var(--border); }
+  .phase-section:last-child { border-bottom: none; }
+  .phase-section-tag { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .strategy-text { font-size: 13px; font-weight: 500; margin-bottom: 6px; line-height: 1.5; }
+  .explanation-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .summary-section { padding: 12px 16px; background: var(--bg-secondary); border-top: 0.5px solid var(--border); }
+  .summary-label { font-size: 10px; font-weight: 500; letter-spacing: 0.08em; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+  .summary-text { font-size: 12px; line-height: 1.6; }
+  .dl-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 1rem; background: #1D6B52; color: #fff; transition: opacity 0.15s; }
+  .dl-btn:hover { opacity: 0.88; }
+  .dl-btn:disabled { opacity: 0.5; cursor: default; }
+</style>
+</head>
+<body>
+
+<div id="wiz">
+  <div class="step-bar">
+    <div class="step active" id="s1"><div class="step-num">1</div>City</div>
+    <div class="step-line"></div>
+    <div class="step" id="s2"><div class="step-num">2</div>Design phase</div>
+    <div class="step-line"></div>
+    <div class="step" id="s3"><div class="step-num">3</div>Your hazards</div>
+    <div class="step-line"></div>
+    <div class="step" id="s4"><div class="step-num">4</div>Your matrix</div>
+  </div>
+
+  <div class="panel visible" id="p1">
+    <div class="panel-label">Step 1 of 4</div>
+    <div class="panel-title">Where is your project located?</div>
+    <div class="panel-sub">Select your city. If it's not listed, choose "Other city" — we'll guide you to find your hazards first.</div>
+    <div class="city-grid">
+      <div class="city-btn" onclick="selCity(this,'Los Angeles')"><div class="city-name">Los Angeles</div><div class="city-region">USA</div></div>
+      <div class="city-btn" onclick="selCity(this,'Monterrey')"><div class="city-name">Monterrey</div><div class="city-region">Mexico</div></div>
+      <div class="city-btn" onclick="selCity(this,'New York')"><div class="city-name">New York</div><div class="city-region">USA</div></div>
+      <div class="city-btn" onclick="selCity(this,'Bogotá')"><div class="city-name">Bogotá</div><div class="city-region">Colombia</div></div>
+      <div class="city-btn" onclick="selCity(this,'Guatemala City')"><div class="city-name">Guatemala City</div><div class="city-region">Guatemala</div></div>
+    </div>
+    <div class="other-row" onclick="selCity(this,'__other__')">
+      <div class="other-icon">+</div>
+      <div><div class="lt">My city is not listed</div><div class="lu">I'll look up my hazards using ThinkHazard or Climate Watch</div></div>
+    </div>
+    <button class="next-btn" id="btn1" disabled onclick="goStep(2)">Continue →</button>
+  </div>
+
+  <div class="panel" id="p2">
+    <div class="panel-label">Step 2 of 4</div>
+    <div class="panel-title">What design phase are you in?</div>
+    <div class="panel-sub">We'll show you only the strategies relevant to your current phase.</div>
+    <div class="phase-cards">
+      <div class="phase-card" onclick="selPhase(this,'sd')"><div class="ptag t-sd">SD</div><div class="phase-title">Schematic design</div><div class="phase-desc">High-level strategies for site selection, massing, and overall approach.</div></div>
+      <div class="phase-card" onclick="selPhase(this,'dd')"><div class="ptag t-dd">DD</div><div class="phase-title">Design development</div><div class="phase-desc">Strategies for integrating climate resilience into structure and envelope.</div></div>
+      <div class="phase-card" onclick="selPhase(this,'cd')"><div class="ptag t-cd">CD</div><div class="phase-title">Construction documents</div><div class="phase-desc">Specific detailing, specs, and requirements for contractor implementation.</div></div>
+      <div class="phase-card" onclick="selPhase(this,'all')"><div class="ptag t-all">ALL</div><div class="phase-title">Show all phases</div><div class="phase-desc">See all three phases — useful for planning ahead or the full picture.</div></div>
+    </div>
+    <div style="margin-top:0.5rem;">
+      <button class="back-btn" onclick="goStep(1)">← Back</button>
+      <button class="next-btn" id="btn2" disabled onclick="goStep(3)">Continue →</button>
+    </div>
+  </div>
+
+  <div class="panel" id="p3">
+    <div class="panel-label">Step 3 of 4</div>
+    <div class="panel-title" id="p3-title"></div>
+    <div class="panel-sub" id="p3-sub"></div>
+    <div id="p3-body"></div>
+    <div style="margin-top:1.25rem;">
+      <button class="back-btn" onclick="goStep(2)">← Back</button>
+      <button class="next-btn" id="btn3" onclick="goStep(4)">See my matrix →</button>
+    </div>
+  </div>
+
+  <div class="panel" id="p4">
+    <div class="panel-label">Step 4 of 4</div>
+    <div id="p4-body"></div>
+    <div style="margin-top:1rem; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <button class="back-btn" onclick="goStep(1)">← Start over</button>
+      <button class="dl-btn" id="dl-btn" onclick="downloadExcel()">↓ Download as Excel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STRAT = {"Avalanche|||Very Low":{"sd":"No action required.","sd_exp":"This phase assesses site characteristics indicating very low risk where no specific strategies are necessary.","dd":"","dd_exp":"","cd":"","cd_exp":"","summary":"No action is necessary for very low avalanche risk."},"Avalanche|||Low":{"sd":"Avoid siting in flow paths.","sd_exp":"Initial site evaluation identifies potential flow paths, prompting a design that avoids them to mitigate risk.","dd":"Validate setbacks with topography data.","dd_exp":"This involves verifying distance from identified risk zones, ensuring the design complies with local terrain data to minimize exposure.","cd":"Document site restrictions.","cd_exp":"Clear documentation of restrictions is necessary to ensure compliance with safety and planning regulations.","summary":"To avoid low-lying flow paths, planners conduct site analysis. Architects and landscape architects collaborate to validate the site layout while documenting restrictions to mitigate risk."},"Avalanche|||Medium":{"sd":"Massing oriented away from slope.","sd_exp":"The design focuses on orienting building massing strategically to minimize avalanche risk, informed by topographical assessments.","dd":"Integrate berms or deflection landscape.","dd_exp":"This phase develops specific landscaping strategies to create barriers or deflections to reduce avalanche impacts.","cd":"Detail protective landscape systems.","cd_exp":"Detailed specifications ensure that landscaping effectively demonstrates its protective capability against avalanches.","summary":"Ensure building massing avoids slopes. Civil engineers and architects work together to create berms that deflect potential avalanches."},"Avalanche|||Very High":{"sd":"Avoid site.","sd_exp":"Assessments reveal high avalanche risk, prompting a recommendation to select an alternative site altogether to ensure safety.","dd":"If unavoidable, define sacrificial zones for possible avalanche impact.","dd_exp":"When site selection is restricted, this phase focuses on defining zones that can absorb impact without endangering the structural integrity of the building.","cd":"Reinforced envelope and impact detailing requirements must be clearly defined.","cd_exp":"Specifications will outline reinforced construction methods necessary for withstanding potential avalanche forces.","summary":"Avoid siting in high-risk avalanche areas when possible. If the site cannot be changed, stakeholders must outline sacrificial zones in consultation with geotechnical engineers."},"Coastal Flooding|||Very Low":{"sd":"Basic grading strategy.","sd_exp":"A grading strategy is created to elevate the site slightly, ensuring the natural flow of water away from the building.","dd":"Confirm Finished Floor Elevation (FFE) is above grade.","dd_exp":"This step verifies that the finished construction aligns with planned elevations, ensuring it stays above flood thresholds.","cd":"Provide drainage details that comply with local codes.","cd_exp":"Documenting drainage specifications is crucial to meet regulatory requirements and ensure effective stormwater management.","summary":"Implement a grading strategy to ensure positive drainage."},"Coastal Flooding|||Low":{"sd":"Raise ground floor above potential flooding levels.","sd_exp":"This phase explores raising the ground floor significantly to minimize the risk of flood-related damage.","dd":"Coordinate Base Flood Elevation (BFE) compliance.","dd_exp":"Stakeholders work together to ensure that all designs conform to specified BFE requirements according to flood zone maps.","cd":"Document waterproofing and floodproofing specifications.","cd_exp":"Accurate documentation ensures that waterproofing measures meet both construction and city regulations.","summary":"Raising the ground floor reduces flood risk and is key for compliance."},"Coastal Flooding|||Medium":{"sd":"Develop a floodable ground level concept that allows water to enter and exit the building safely.","sd_exp":"The design explores creating areas that can safely accommodate flood waters, minimizing damage during flood events.","dd":"Create a wet-proofing strategy alongside material selection that minimizes flood damage.","dd_exp":"This includes selecting appropriate materials and construction methods to ensure areas remain functional while exposed to potential flooding.","cd":"Produce detailed sections, including flood vents and material specifications for flood mitigation.","cd_exp":"Specific detailing outlines how the flood protection measures will be constructed and function during flooding.","summary":"Design a floodable ground concept to minimize potential water damage."},"Coastal Flooding|||Very High":{"sd":"Implement an elevated building strategy to raise the structure above potential flood levels.","sd_exp":"The design focuses on lifting the entire building above flood risk zones to mitigate water exposure entirely.","dd":"Adapt structural elements and vertical circulation for accessibility during floods.","dd_exp":"Ensure circulation patterns accommodate movement during emergencies, maintaining safety and user access.","cd":"Provide full detailing of elevated systems, including foundations and anchoring strategies.","cd_exp":"Detailed documentation specifies how the elevated systems will be implemented, including all safety features and support structures.","summary":"Develop an elevated strategy to protect buildings from severe flooding."},"Coldwaves|||Very Low":{"sd":"Follow a standard envelope approach that maintains general thermal resistance in structures.","sd_exp":"The design adheres to established building codes ensuring minimum thermal envelope performance.","dd":"","dd_exp":"","cd":"","cd_exp":"","summary":"A standard envelope is sufficient for very low coldwave risk areas."},"Coldwaves|||Low":{"sd":"Improve insulation concept within the building design to enhance energy efficiency.","sd_exp":"A focus on increasing insulation within the design ensures energy efficiency that can reduce heating costs during cold temperatures.","dd":"Define wall and roof assemblies to maximize insulation value.","dd_exp":"Specify the types of systems ensuring that assembly details incorporate efficiency-enhancing features suitable for the climate.","cd":"Specify insulation materials and requirements for airtightness to reduce heating demands.","cd_exp":"This step outlines the specific materials needed to achieve the desired energy performance during winter conditions.","summary":"Enhance insulation to restrict heat loss."},"Coldwaves|||Medium":{"sd":"Design compact building massing that reduces exposure to cold.","sd_exp":"The design emphasizes compactness to minimize surface area exposed to cold, which lowers heating loads and enhances comfort levels.","dd":"Employ high-performance envelope design principles.","dd_exp":"Integrate robust insulation with air sealing practices in conjunction with the design to reflect cold weather considerations.","cd":"Detail thermal bridge issues to further improve the building envelope.","cd_exp":"Documentation will include specific assembly instructions to reduce thermal bridging, crucial for effective energy performance during cold periods.","summary":"Reduce glazing and improve massing to limit heat loss."},"Coldwaves|||Very High":{"sd":"Design passive heating strategies that maximize solar gain while minimizing heat loss.","sd_exp":"This strategy aims to leverage sunlight for heating by strategically positioning windows and thermal mass within the building design.","dd":"Integrate thermal mass and zoning strategies for enhanced energy efficiency.","dd_exp":"Define specific areas within the building that will use this thermal strategy while ensuring in-house climates remain stable and comfortable.","cd":"Provide airtightness specifications and redundancy systems to ensure performance during extreme cold.","cd_exp":"Documentation articulates the specifications of airtightness measures vital for effective energy efficiency during severe cold temperatures.","summary":"Passive heating strategies are vital in very cold areas."},"Droughts|||Very Low":{"sd":"Implement basic water efficiency practices to minimize water usage.","sd_exp":"Standard water-efficient practices ensure that buildings use only necessary amounts of water, reducing wastage.","dd":"","dd_exp":"","cd":"","cd_exp":"","summary":"Basic water efficiency is a preliminary requirement for drought-prone areas."},"Droughts|||Low":{"sd":"Design landscapes that reduce water demand using xeriscaping principles.","sd_exp":"Landscape planning focuses on using native and drought-tolerant plants to minimize irrigation needs during dry periods.","dd":"Define xeriscaping principles that suit local climate conditions.","dd_exp":"This step involves selecting appropriate plants and detailing ground cover to mitigate evaporation and promote efficient water use.","cd":"Document irrigation specifications to optimize water use during dry periods.","cd_exp":"Documenting irrigation requirements ensures compliance with sustainable practices during drought conditions.","summary":"Reduce landscape water demand with xeriscaping."},"Droughts|||Medium":{"sd":"Develop a rainwater harvesting concept that allows for the collection and reuse of rainwater.","sd_exp":"Initial designs incorporate features that facilitate rainwater catchment and storage for later use, improving resource efficiency.","dd":"Design, size, and integrate storage systems for rainwater reuse into plumbing systems.","dd_exp":"This phase specifies the design of storage tanks, their locations, and how they integrate with existing plumbing systems.","cd":"Prepare system integration details and specifications for plumbing that supports rainwater harvesting.","cd_exp":"Detail documentation will guide builders on how to install these systems accurately.","summary":"Rainwater harvesting systems reduce reliance on municipal water supplies."},"Droughts|||Very High":{"sd":"Define a net-zero water strategy that fully integrates water use across all systems.","sd_exp":"This strategy ensures that water usage is balanced with natural replenishment rates, promoting sustainability.","dd":"Document full water cycle integration, considering all inputs and outputs of water on the site.","dd_exp":"Take into account local water supply nuances to ensure the strategies developed are practical and operationally viable.","cd":"Provide detailed system documentation that guarantees compliance with net-zero standards.","cd_exp":"Documentation will include specifications needed to ensure that systems meet net-zero water achievements throughout construction and use.","summary":"Aim for a net-zero water system to enhance sustainability."},"Earthquake|||Very Low":{"sd":"Follow regular massing approaches as per standard design codes to ensure compliance.","sd_exp":"Structural designs focus on maintaining standard configurations that protect against potential earthquake impacts.","dd":"","dd_exp":"","cd":"Provide code compliance documentation affirming design choices meet applicable standards.","cd_exp":"Documentation confirms that all aspects of the design meet local building codes for low seismic risk areas.","summary":"Maintain compliance for very low earthquake risk zones."},"Earthquake|||Low":{"sd":"Avoid irregular building geometry, which can perform poorly during seismic events.","sd_exp":"Building designs are structured in a regular, symmetrical manner to enhance seismic performance by distributing forces evenly.","dd":"Coordinate architectural design with structural engineering to reinforce common areas.","dd_exp":"Close collaboration ensures that all elements of design work together, confirming that the structural system supports architectural design intentions.","cd":"Basic seismic detailing is crucial to ensure safety during minor seismic events.","cd_exp":"Ensure detailing follows guidelines that outline how to maintain stability during seismic events.","summary":"Steer clear of irregular geometry to enhance performance during earthquakes."},"Earthquake|||Medium":{"sd":"Implement symmetrical layouts that distribute stress evenly during seismic events.","sd_exp":"This design focuses on creating building forms that can handle seismic forces effectively by centering weight and stress patterns throughout the structure.","dd":"Coordinate drift of structural systems with architectural designs to allow for movement.","dd_exp":"This phase emphasizes the need for architects and engineers to work together to ensure flexibility and resilience in design, accommodating structural movements.","cd":"Detail joint and connection specifics to ensure support under seismic stress.","cd_exp":"Detailed documentation will guide construction practices that allow for necessary movement while maintaining overall structure integrity.","summary":"Symmetrical designs are pivotal in medium-risk areas."},"Earthquake|||High":{"sd":"Define seismic strategy (isolation/damping).","sd_exp":"The design specifically incorporates advanced structural systems that can withstand significant earthquakes without catastrophic failure.","dd":"Integrate systems into architecture.","dd_exp":"This phase focuses on ensuring technologies blend seamlessly into the overall building design for usability.","cd":"Full restraint of non-structural elements.","cd_exp":"Clear guidelines indicate how to appropriately install systems that will enhance earthquake resilience throughout the construction process.","summary":"Integrated seismic strategies are essential for high earthquake risk locations."},"Earthquake|||Very High":{"sd":"Define seismic strategy (isolation/damping).","sd_exp":"The design specifically incorporates advanced structural systems that can withstand significant earthquakes without catastrophic failure.","dd":"Integrate systems into architecture.","dd_exp":"This phase focuses on ensuring technologies blend seamlessly into the overall building design for usability.","cd":"Full restraint of non-structural elements.","cd_exp":"Clear guidelines indicate how to appropriately install systems that will enhance earthquake resilience throughout the construction process.","summary":"Integrated seismic strategies are essential for very high earthquake risk locations."},"Heat Wave|||Very Low":{"sd":"Adhere to basic orientation and shading strategies that respond to local climate conditions.","sd_exp":"The approach involves designing spaces that remain comfortable with minimal artificial climate control.","dd":"","dd_exp":"","cd":"","cd_exp":"","summary":"Basic orientation suffices for low heat wave risk areas."},"Heat Wave|||Low":{"sd":"Integrate external shading concepts that reduce heat gain during peak temperatures.","sd_exp":"The design must focus on shading elements that minimize direct sunlight exposure on building surfaces.","dd":"Define façade systems that promote airflow while minimizing heat accumulation.","dd_exp":"Specific designs ensure proper airflow between spaces and effective thermal management while maintaining aesthetic features.","cd":"Document solar control specifications that dictate shading performance levels.","cd_exp":"Specifications ensure that the defined shading strategies achieve the required cooling performance effectively throughout the year.","summary":"External shading systems reduce heat absorption significantly."},"Heat Wave|||Medium":{"sd":"Design passive cooling strategies that leverage natural climate conditions for building comfort.","sd_exp":"Designs are developed to include architectural features like overhangs and thermal mass that maintain comfortable indoor temperatures.","dd":"Include thermal mass and ventilation design principles that enable internal temperature regulation.","dd_exp":"This involves integrating features that optimize thermal comfort during heat waves.","cd":"Prepare detailed façade and ventilation system documents to ensure compliance with thermal performance standards.","cd_exp":"Documentation ensures the installation requirements for ventilation and mass elements are clear.","summary":"Passive cooling approaches optimize building comfort."},"Heat Wave|||Very High":{"sd":"Incorporate passive survivability features that maintain functionality during extreme heat.","sd_exp":"Designs must include features ensuring buildings remain usable during severe heat events, protecting occupants and minimizing energy demands.","dd":"Create cooling refuges that offer respite for occupants.","dd_exp":"Identify and develop specific areas within the building that can function as safe spaces during extreme heat.","cd":"Design high-performance envelope specifications that contribute to long-term durability and comfort under extreme conditions.","cd_exp":"Documentation will clearly detail requirements for weatherability and longevity against extreme conditions.","summary":"Passive survivability is crucial for extreme heat conditions."},"Hurricane|||Medium":{"sd":"Employ aerodynamic massing principles to reduce wind loads on the building.","sd_exp":"The design focuses on shaping the building to reduce pressure differentials and optimize wind flow around the structure.","dd":"Include impact glazing and façade systems that withstand hurricane conditions.","dd_exp":"Specification of glazing systems incorporates details on how to prevent breakage and water intrusion during severe weather events.","cd":"Develop envelope detailing that incorporates secure connections for materials under duress.","cd_exp":"This outlines how main materials interact and how those connections provide additional safety during high winds.","summary":"Aerodynamic massing greatly reduces structural stress."},"Hurricane|||High":{"sd":"Design a hardened building concept that can endure severe hurricane conditions.","sd_exp":"The design includes robust, reinforced structures capable of withstanding extreme wind and water forces.","dd":"Create safe rooms within the structure for occupant shelter during storms.","dd_exp":"Design plans must incorporate easily accessible refuge spaces within buildings.","cd":"Provide complete envelope and system specifications that cover structural integrity and safety.","cd_exp":"Detailed specifications outline the requirements for construction materials and systems that provide optimum performance during hurricanes.","summary":"Hardened buildings are essential in high hurricane risk locations."},"Hurricane|||Very High":{"sd":"Design a hardened building concept that can endure severe hurricane conditions.","sd_exp":"The design includes robust, reinforced structures capable of withstanding extreme wind and water forces.","dd":"Create safe rooms within the structure for occupant shelter during storms.","dd_exp":"Design plans must incorporate easily accessible refuge spaces within buildings.","cd":"Provide complete envelope and system specifications that cover structural integrity and safety.","cd_exp":"Detailed specifications outline the requirements for construction materials and systems that provide optimum performance during hurricanes.","summary":"Hardened buildings are essential in very high hurricane risk locations."},"Landslide|||Low":{"sd":"Design building models that step with terrain contours to minimize landslide risk.","sd_exp":"This strategy takes into account the natural movement of terrain to ensure stability by aligning building structures and preserving soil integrity.","dd":"Limit excavation during construction to preserve soil integrity.","dd_exp":"This phase emphasizes preserving existing soil structure when building, vital to maintaining site stability against landslide risks.","cd":"Document foundation detailing to ensure stability against potential landslides.","cd_exp":"Accurate documentation of specific foundation requirements ensures further compliance with stability needs for safe construction.","summary":"Stepping buildings with terrain aids in slope management."},"Landslide|||Medium":{"sd":"Avoid cut and fill imbalances during site preparation to maintain soil stability.","sd_exp":"This design approach focuses on ensuring that earthmoving work does not interfere with natural soil retention patterns.","dd":"Integrate retaining systems to stabilize slopes near the structure.","dd_exp":"Engineers work to create stabilization systems that support retaining structures, avoiding soil erosion and instability.","cd":"Provide detailed retaining wall specifications that ensure stability during landslides.","cd_exp":"Documenting how to create stable retaining walls is vital to ensuring the integrity of structures and surrounding environments.","summary":"Preventing earth movement is critical in medium-risk areas."},"Landslide|||High":{"sd":"Avoid site or minimize footprint.","sd_exp":"The design team must carefully assess geological conditions surrounding proposed sites, using data to inform decisions that prioritize safety.","dd":"Deep foundation strategy.","dd_exp":"This focus on stabilizing structures at depths helps to protect them from soil movement and ensure safety during extreme weather or geological events.","cd":"Full geotechnical detailing.","cd_exp":"Detailed documentation will specify how deep foundations will be built and how they will meet stability criteria under extreme conditions.","summary":"Site selection is paramount for areas at high risk for landslides."},"Landslide|||Very High":{"sd":"Avoid site or minimize footprint.","sd_exp":"The design team must carefully assess geological conditions surrounding proposed sites, using data to inform decisions that prioritize safety.","dd":"Deep foundation strategy.","dd_exp":"This focus on stabilizing structures at depths helps to protect them from soil movement and ensure safety during extreme weather or geological events.","cd":"Full geotechnical detailing.","cd_exp":"Detailed documentation will specify how deep foundations will be built and how they will meet stability criteria under extreme conditions.","summary":"Site selection is paramount for areas at very high risk for landslides."},"Riverine Flooding|||Low":{"sd":"Raise equipment zones above flood stages to protect critical infrastructure.","sd_exp":"The strategy includes elevating key mechanical systems to avoid damage during minor flood events.","dd":"Define Finished Floor Elevation (FFE) based on flood zone maps to inform design decisions.","dd_exp":"This phase ensures that all elevations comply with local maps and regulations regarding flood risk zones.","cd":"Coordinate MEP systems to ensure resilience during potential flooding conditions.","cd_exp":"Specifications ensure that all essential systems are placed appropriately to further enhance their survival during floods.","summary":"Equipment zones raised above flood stages reduce damage."},"Riverine Flooding|||Medium":{"sd":"Design flood-adapted ground floors that allow for potential floodwaters while minimizing damage.","sd_exp":"The design focuses on creating lower areas designed to handle floodwater without significant damage.","dd":"Incorporate wet-proofing design to control water ingress and protect subsystems.","dd_exp":"This phase specifies the materials and techniques used to mitigate potential flood damage.","cd":"Provide detailed specifications for section materials and designs that address flooding.","cd_exp":"Detailed documentation ensures that construction practices align with strategies to manage flooding effectively.","summary":"Adaptive ground floors mitigate flood damage impacts significantly."},"Riverine Flooding|||High":{"sd":"Elevated building concept.","sd_exp":"The design elevates the entire structure above flood risk zones, ensuring maximum protection from water intrusion during floods.","dd":"Circulation + structure coordination.","dd_exp":"Accessibility within and around elevated structures is vital for safety, requiring careful planning and documentation.","cd":"Full floodproofing documentation.","cd_exp":"Detailed flood management documents outline construction measures ensuring that the building remains resilient against significant flooding.","summary":"Elevated structures are vital in high-risk flooding areas."},"Riverine Flooding|||Very High":{"sd":"Elevated building concept.","sd_exp":"The design elevates the entire structure above flood risk zones, ensuring maximum protection from water intrusion during floods.","dd":"Circulation + structure coordination.","dd_exp":"Accessibility within and around elevated structures is vital for safety, requiring careful planning and documentation.","cd":"Full floodproofing documentation.","cd_exp":"Detailed flood management documents outline construction measures ensuring that the building remains resilient against significant flooding.","summary":"Elevated structures are vital in very high-risk flooding areas."},"Strong Wind|||Low":{"sd":"Incorporate façade reinforcement concepts to withstand wind loads.","sd_exp":"The design must focus on selecting resistant materials and structural reinforcement techniques to support wind load resistance.","dd":"Design anchorage systems to secure the building envelope against wind forces.","dd_exp":"This phase documents specific anchoring requirements and their integration into the overall design.","cd":"Detail fixing system specifications that resist wind uplift and shear forces.","cd_exp":"Ensuring the documentation addresses all potential weak points is crucial for maintaining structure integrity during storm conditions.","summary":"Reinforcing facades improves resilience against wind impacts."},"Strong Wind|||Medium":{"sd":"Utilize aerodynamic shaping for structures to optimize airflow and reduce wind resistance.","sd_exp":"This phase emphasizes designing structures that can effectively divert wind forces, minimizing pressure differentials and reducing overall stress.","dd":"Include façade pressure design that regulates airflow around the building effectively.","dd_exp":"This phase focuses on optimizing airflow paths, ensuring they reduce wind load effects while maintaining aesthetic and functional qualities.","cd":"Provide envelope detailing that incorporates structural reinforcement while maintaining aesthetic integrity.","cd_exp":"Documentation will outline materials and techniques necessary for achieving an aerodynamic shape while maintaining operational integrity.","summary":"Aerodynamic shapes allow buildings to better weather wind events."},"Strong Wind|||High":{"sd":"Aerodynamic shaping.","sd_exp":"This phase emphasizes designing structures that effectively divert wind forces, minimizing pressure differentials and reducing overall stress on the building.","dd":"Façade pressure design.","dd_exp":"Optimizing airflow paths reduces wind load effects while maintaining aesthetic and functional qualities.","cd":"Envelope detailing.","cd_exp":"Documentation will outline materials and techniques necessary for achieving an aerodynamic shape while maintaining operational integrity.","summary":"Aerodynamic shapes allow buildings to better weather high wind events."},"Strong Wind|||Very High":{"sd":"Implement wind-informed design practices that utilize Computational Fluid Dynamics (CFD) for performance analysis.","sd_exp":"The design employs advanced analysis tools to model wind behavior around the built structure, enhancing predictive capacity for wind loads.","dd":"Ensure structural integration to withstand high wind events while complying with related codes and standards.","dd_exp":"This phase confirms that structures not only withstand winds but also meet aesthetic standards.","cd":"Document high-performance façade specifications to ensure design resilience against severe winds.","cd_exp":"Comprehensive documentation highlights performance specs crucial for structures undertaking severe wind loads during extreme events.","summary":"Advanced wind-informed designs maximize structural integrity against extreme conditions."},"Wildfire|||Low":{"sd":"Develop defensible space concepts that create buffer zones between properties and wildland vegetation.","sd_exp":"The design incorporates creating buffer zones around buildings to lessen the likelihood of fire spread.","dd":"Design vegetation strategies that prioritize fire-resistant plant selection to mitigate risks.","dd_exp":"This phase emphasizes the importance of planning for defensible spaces that utilize fire-resistant plants.","cd":"Document landscape specifications for defensible space requirements and maintenance guidelines.","cd_exp":"Clear documentation assists in establishing care protocols that ensure the effectiveness of the defensible space over time.","summary":"Defensible spaces enhance safety in low wildfire risk zones."},"Wildfire|||Medium":{"sd":"Utilize fire-resistant materials in the building envelope for enhanced protection against wildfire exposure.","sd_exp":"The design emphasizes the selection of appropriate materials that reduce the chance of ignition and limit fire spread.","dd":"Design the building envelope to be less vulnerable to fire spread through careful material selection.","dd_exp":"This includes detailed material specifications that reflect the purpose of utilizing fire-resistant methods during construction.","cd":"Provide detailed material documentation aligning with fire-resistance standards for construction.","cd_exp":"This ensures that the construction practices adhere to fire safety codes, risking minimal danger to inhabitants during extreme events.","summary":"Using fire-resistant materials improves resilience against medium wildfire risks."},"Wildfire|||High":{"sd":"Hardened envelope.","sd_exp":"Focus on constructing buildings using materials and designs that can endure high temperatures and prevent flames from penetrating into living spaces.","dd":"Buffer zones + minimal openings.","dd_exp":"The design includes forecasting potential fire routes and pre-emptively addressing points of entry where fire may spread.","cd":"Fire-rated assemblies + detailing.","cd_exp":"This documentation outlines appropriate materials and assemblies to ensure durability against extreme heat.","summary":"Hardened envelopes are crucial for buildings in high wildfire risk areas."},"Wildfire|||Very High":{"sd":"Establish a hardened envelope around buildings that incorporates fire-rated assemblies to withstand extreme heat.","sd_exp":"Focus on constructing buildings using materials and designs that can endure high temperatures and prevent flames from penetrating into living spaces.","dd":"Create buffer zones and minimize openings in the structure to reduce vulnerability to fire spread.","dd_exp":"The design includes forecasting potential fire routes and pre-emptively addressing points of entry where fire may spread.","cd":"Document fire-rated assembly specifications that comply with fire protection standards.","cd_exp":"This documentation outlines appropriate materials and assemblies to ensure durability against extreme heat, crucial for safety.","summary":"Hardened envelopes are crucial for buildings in very high wildfire risk areas."},"Winter Weather|||Low":{"sd":"Propose a roof slope concept that effectively manages snow loads.","sd_exp":"The design emphasizes the importance of sloped roofs to facilitate snow drainage, mitigating potential damage from heavy snow accumulation.","dd":"Design snow shedding solutions that prevent dangerous accumulations.","dd_exp":"Select systems focused on enhancing drainage capabilities and reducing risks to structural integrity from snow load.","cd":"Provide roofing detailing that meets load requirements and details drainage for melting snow or ice.","cd_exp":"This ensures clarity on how to construct roofing that effectively reduces risks without compromising overall structural performance.","summary":"Sloped roofs mitigate snow load impacts effectively."},"Winter Weather|||Medium":{"sd":"Integrate snow load factors into design considerations for added safety.","sd_exp":"The design phase assesses snow load impacts and addresses them directly by enhancing features that bolster structural resiliency.","dd":"Create entry protection features that safeguard occupants from snow accumulation.","dd_exp":"Design strategies must include solutions that optimize entry spaces, ensuring they are functional and safe for occupants despite severe weather conditions.","cd":"Document specifications ensuring structural integrity against winter load expectations.","cd_exp":"Ensuring accurate documentation helps maintain design standards and provides guidelines to prevent potential safety issues during extreme conditions.","summary":"Addressing snow load integration is vital for medium-risk locations."},"Winter Weather|||High":{"sd":"Redundant access.","sd_exp":"Focus on providing multiple safe access routes during winter weather emergencies to ensure occupant safety through redundancy.","dd":"Snow management systems.","dd_exp":"This phase details pathways and access points, focusing on ensuring safe mobility and accessibility during severe winter weather.","cd":"Heated surfaces detailing.","cd_exp":"Comprehensive documentation provides a roadmap for builders to ensure that access points remain clear and operational during adverse weather.","summary":"Redundant access strategies optimize safety in high winter weather risk areas."},"Winter Weather|||Very High":{"sd":"Design redundant access strategies that ensure safe exits and entrances regardless of weather conditions.","sd_exp":"Focus on providing multiple safe access routes during winter weather emergencies to ensure occupant safety through redundancy.","dd":"Integrate snow management systems that reliably remove snow from pathways.","dd_exp":"This phase details pathways and access points, focusing on ensuring safe mobility and accessibility during severe winter weather and snowfalls.","cd":"Document heated surface detailing to facilitate winter access and compliance with safety regulations.","cd_exp":"Comprehensive documentation provides a roadmap for builders to ensure that access points remain clear and operational during adverse weather.","summary":"Redundant access strategies optimize safety in severe winter conditions."}};
+
+const HLOOKUP={"River Flooding":"Riverine Flooding","Heavy Rain":"Riverine Flooding","Cold Waves":"Coldwaves","Drought":"Droughts","Hurricane":"Hurricane","Coastal Flooding":"Coastal Flooding","Earthquake":"Earthquake","Wildfire":"Wildfire","Heat Wave":"Heat Wave","Landslide":"Landslide","Strong Wind":"Strong Wind","Winter Weather":"Winter Weather","Avalanche":"Avalanche","Hurricane / Cyclone":"Hurricane","Riverine Flooding":"Riverine Flooding","Coldwaves":"Coldwaves","Droughts":"Droughts"};
+const CITY_DATA={"Los Angeles":[{"h":"Earthquake","l":"High"},{"h":"Wildfire","l":"High"},{"h":"Heat Wave","l":"High"},{"h":"Drought","l":"Medium"},{"h":"Landslide","l":"High"},{"h":"Coastal Flooding","l":"High"},{"h":"Strong Wind","l":"Medium"},{"h":"Heavy Rain","l":"Medium"}],"Monterrey":[{"h":"Heat Wave","l":"High"},{"h":"Drought","l":"High"},{"h":"River Flooding","l":"Medium"},{"h":"Heavy Rain","l":"High"},{"h":"Strong Wind","l":"Medium"},{"h":"Earthquake","l":"Medium"}],"New York":[{"h":"Coastal Flooding","l":"High"},{"h":"River Flooding","l":"High"},{"h":"Hurricane","l":"High"},{"h":"Winter Weather","l":"High"},{"h":"Cold Waves","l":"High"},{"h":"Strong Wind","l":"Medium"},{"h":"Heat Wave","l":"Medium"}],"Bogotá":[{"h":"Earthquake","l":"High"},{"h":"Landslide","l":"High"},{"h":"Heavy Rain","l":"High"},{"h":"River Flooding","l":"Medium"},{"h":"Heat Wave","l":"Medium"},{"h":"Volcanic Activity","l":"Medium"}],"Guatemala City":[{"h":"Earthquake","l":"Very High"},{"h":"Landslide","l":"Very High"},{"h":"Volcanic Activity","l":"High"},{"h":"Heavy Rain","l":"High"},{"h":"River Flooding","l":"Medium"},{"h":"Hurricane","l":"Medium"},{"h":"Strong Wind","l":"Medium"}]};
+const ALL_HAZARDS=["Avalanche","Coastal Flooding","Cold Waves","Drought","Earthquake","Heat Wave","Heavy Rain","Hurricane / Cyclone","Landslide","River Flooding","Strong Wind","Volcanic Activity","Wildfire","Winter Weather"];
+const LEVELS_LIST=[{l:"Very High",cls:"p-vh",badge:"b-vh"},{l:"High",cls:"p-h",badge:"b-h"},{l:"Medium",cls:"p-m",badge:"b-m"},{l:"Low",cls:"p-l",badge:"b-l"},{l:"Very Low",cls:"p-vl",badge:"b-vl"}];
+const PHASE_META={sd:{label:"Schematic design",tag:"SD",badge:"pb-sd"},dd:{label:"Design development",tag:"DD",badge:"pb-dd"},cd:{label:"Construction documents",tag:"CD",badge:"pb-cd"},all:{label:"All phases",tag:"ALL",badge:"pb-all"}};
+
+let city=null,phase=null,pickedHazards=[],hazardLevels={},currentRows=[];
+
+function badgeCls(l){return{"Very High":"b-vh","High":"b-h","Medium":"b-m","Low":"b-l","Very Low":"b-vl"}[l]||"b-m";}
+function getStrat(h,l){const k=HLOOKUP[h]||h;return STRAT[k+"|||"+l]||STRAT[k+"|||High"]||null;}
+function selCity(el,c){document.querySelectorAll('.city-btn,.other-row').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');city=c;document.getElementById('btn1').disabled=false;}
+function selPhase(el,p){document.querySelectorAll('.phase-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');phase=p;document.getElementById('btn2').disabled=false;}
+
+function goStep(n){
+  if(n===3&&city!=='__other__')n=4;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('visible'));
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active','done'));
+  const map=city==='__other__'?[1,2,3,4]:[1,2,null,3];
+  for(let i=1;i<=4;i++){const s=document.getElementById('s'+i);if(!s)continue;const log=map[i-1];if(log===null){s.style.opacity='0.3';continue;}s.style.opacity='1';if(log<n)s.classList.add('done');if(log===n||i===4&&n===4)s.classList.add('active');}
+  document.getElementById('p'+n).classList.add('visible');
+  if(n===3)buildStep3();
+  if(n===4)buildStep4();
+}
+
+function buildStep3(){
+  document.getElementById('p3-title').textContent='Find and rate your hazards';
+  document.getElementById('p3-sub').textContent='Check the tools below to identify hazards for your city. Then select each one and assign its individual risk level.';
+  document.getElementById('btn3').disabled=true;
+  pickedHazards=[];hazardLevels={};
+  document.getElementById('p3-body').innerHTML=`
+    <div class="ext-links">
+      <a class="ext-link" href="https://thinkhazard.org" target="_blank"><div class="ext-dot"></div><div><div class="lt">ThinkHazard</div><div class="lu">thinkhazard.org</div></div><span style="margin-left:auto;font-size:13px;color:#666;">↗</span></a>
+      <a class="ext-link" href="https://www.climatewatchdata.org" target="_blank"><div class="ext-dot"></div><div><div class="lt">Climate Watch Data</div><div class="lu">climatewatchdata.org</div></div><span style="margin-left:auto;font-size:13px;color:#666;">↗</span></a>
+    </div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:8px;">1. Select your hazards</div>
+    <div class="hchips" id="hchips">${ALL_HAZARDS.map(h=>`<div class="hchip" onclick="toggleH(this,'${h.replace(/\//g,'_')}')">${h}</div>`).join('')}</div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:10px;">2. Set a risk level for each</div>
+    <div id="sel-h"><div class="empty-note">No hazards selected yet.</div></div>`;
+}
+
+function toggleH(el,hRaw){
+  const h=hRaw.replace(/_/g,'/');
+  if(el.classList.contains('picked')){el.classList.remove('picked');pickedHazards=pickedHazards.filter(x=>x!==h);delete hazardLevels[h];}
+  else{el.classList.add('picked');pickedHazards.push(h);}
+  renderSelH();checkStep3();
+}
+function renderSelH(){
+  const c=document.getElementById('sel-h');if(!c)return;
+  if(!pickedHazards.length){c.innerHTML='<div class="empty-note">No hazards selected yet.</div>';return;}
+  c.innerHTML=pickedHazards.map(h=>`<div class="hlevel-row" id="hr-${h.replace(/[\s\/]+/g,'-')}"><div class="haz-label">${h}</div><div class="lpills">${LEVELS_LIST.map(lv=>`<div class="lpill ${hazardLevels[h]===lv.l?lv.cls:''}" onclick="setLv('${h}','${lv.l}','${lv.cls}')">${lv.l}</div>`).join('')}</div></div>`).join('');
+}
+function setLv(h,l,cls){
+  hazardLevels[h]=l;
+  const row=document.getElementById('hr-'+h.replace(/[\s\/]+/g,'-'));
+  if(row){row.querySelectorAll('.lpill').forEach(p=>LEVELS_LIST.forEach(lv=>p.classList.remove(lv.cls)));row.querySelectorAll('.lpill').forEach(p=>{if(p.textContent===l)p.classList.add(cls);});}
+  checkStep3();
+}
+function checkStep3(){document.getElementById('btn3').disabled=!(pickedHazards.length>0&&pickedHazards.every(h=>hazardLevels[h]));}
+
+function phaseBlock(s,phaseName,col,sk,ek){
+  if(!s[sk])return'';
+  return`<div class="phase-section"><div class="phase-section-tag"><div class="phase-dot" style="background:${col};"></div><span style="color:${col};text-transform:uppercase;letter-spacing:0.08em;font-size:10px;font-weight:500;">${phaseName}</span></div><div class="strategy-text">${s[sk]}</div>${s[ek]?`<div class="explanation-text">${s[ek]}</div>`:''}</div>`;
+}
+function buildHazardCard(h,l,s,i){
+  let body='';
+  if(phase==='sd'||phase==='all')body+=phaseBlock(s,'SD','#1D9E75','sd','sd_exp');
+  if(phase==='dd'||phase==='all')body+=phaseBlock(s,'DD','#4A7C6F','dd','dd_exp');
+  if(phase==='cd'||phase==='all')body+=phaseBlock(s,'CD','#2D5A4A','cd','cd_exp');
+  const summary=s.summary?`<div class="summary-section"><div class="summary-label">Overall strategy</div><div class="summary-text">${s.summary}</div></div>`:'';
+  const preview=phase==='all'?(s.sd||s.dd||s.cd||'See details below'):(s[phase]||'See details below');
+  return`<div class="haz-card"><div class="haz-card-header" onclick="toggleCard(this)" id="hdr-${i}"><div class="haz-card-name">${h}</div><span class="lbadge ${badgeCls(l)}">${l}</span><div class="card-preview">${preview}</div><div class="toggle-arrow" id="arr-${i}">▾</div></div><div class="haz-card-body" id="body-${i}">${body}${summary}</div></div>`;
+}
+function toggleCard(hdr){
+  const idx=hdr.id.replace('hdr-','');
+  const body=document.getElementById('body-'+idx);
+  const arr=document.getElementById('arr-'+idx);
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  hdr.classList.toggle('open',!isOpen);
+  arr.classList.toggle('open',!isOpen);
+}
+function buildStep4(){
+  const pm=PHASE_META[phase];
+  currentRows=[];
+  const cityLabel=city!=='__other__'?city:'Custom city';
+  if(city!=='__other__'){currentRows=(CITY_DATA[city]||[]).map(r=>({h:r.h,l:r.l,s:getStrat(r.h,r.l)||{}}));}
+  else{currentRows=pickedHazards.map(h=>({h,l:hazardLevels[h],s:getStrat(h,hazardLevels[h])||{}}));}
+  document.getElementById('p4-body').innerHTML=`
+    <div class="result-header">
+      <div><div class="result-city">${cityLabel}</div><div class="result-title">${currentRows.length} hazard${currentRows.length!==1?'s':''} identified</div></div>
+      <span class="pbadge ${pm.badge}">${pm.tag} — ${pm.label}</span>
+    </div>
+    <div class="hint">Click any row to expand strategies and explanations.</div>
+    <div id="cards">${currentRows.map((r,i)=>buildHazardCard(r.h,r.l,r.s,i)).join('')}</div>`;
+}
+
+function downloadExcel(){
+  const btn=document.getElementById('dl-btn');
+  btn.disabled=true;btn.textContent='Generating...';
+  const pm=PHASE_META[phase];
+  const cityLabel=city!=='__other__'?city:'Custom city';
+  const wb=XLSX.utils.book_new();
+  const ACCENT='FFD85A30',DARK='FF1A3D2B',WHITE='FFFFFFFF',LIGHT='FFF7F7F7';
+  const levelColors={"Very High":'FF8B0000',"High":'FFC62828',"Medium":'FFE65100',"Low":'FF1D6B52',"Very Low":'FF1565C0'};
+  const phaseColors={sd:'FF1D9E75',dd:'FF4A7C6F',cd:'FF2D5A4A'};
+  function hdrCell(v){return{v,t:'s',s:{font:{bold:true,color:{rgb:WHITE},sz:10},fill:{fgColor:{rgb:DARK}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:{bottom:{style:'thin',color:{rgb:ACCENT}}}}};}
+  function dataCell(v,bg,bold){return{v:v||'',t:'s',s:{font:{bold:!!bold,sz:9},fill:{fgColor:{rgb:bg||WHITE}},alignment:{horizontal:'left',vertical:'top',wrapText:true},border:{bottom:{style:'thin',color:{rgb:'FFE0E0E0'}}}}};}
+  function levelCell(v){return{v:v||'',t:'s',s:{font:{bold:true,color:{rgb:WHITE},sz:9},fill:{fgColor:{rgb:levelColors[v]||'FF888888'}},alignment:{horizontal:'center',vertical:'center'},border:{bottom:{style:'thin',color:{rgb:'FFE0E0E0'}}}}};}
+  function phaseHdrCell(v,col){return{v,t:'s',s:{font:{bold:true,color:{rgb:WHITE},sz:9},fill:{fgColor:{rgb:col}},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:{bottom:{style:'thin',color:{rgb:'FFE0E0E0'}}}}};}
+  const phases=phase==='all'?['sd','dd','cd']:[phase];
+  const phaseLabels={sd:'Schematic Design',dd:'Design Development',cd:'Construction Documents'};
+  let headers=[hdrCell('Hazard'),hdrCell('Risk Level')];
+  phases.forEach(p=>{headers.push(phaseHdrCell(phaseLabels[p]+' — Strategy',phaseColors[p]));headers.push(phaseHdrCell(phaseLabels[p]+' — Explanation',phaseColors[p]));});
+  headers.push(hdrCell('Overall Strategy'));
+  const aoa=[headers];
+  currentRows.forEach((r,i)=>{
+    const bg=i%2===0?LIGHT:WHITE;
+    const row=[dataCell(r.h,bg,true),levelCell(r.l)];
+    phases.forEach(p=>{row.push(dataCell(r.s[p]||'—',bg));row.push(dataCell(r.s[p+'_exp']||'—',bg));});
+    row.push(dataCell(r.s.summary||'—',bg));
+    aoa.push(row);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const colW=[{wch:20},{wch:12}];
+  phases.forEach(()=>{colW.push({wch:35},{wch:50});});
+  colW.push({wch:50});
+  ws['!cols']=colW;
+  ws['!rows']=[{hpt:28},...currentRows.map(()=>({hpt:80}))];
+  const titleWs=XLSX.utils.aoa_to_sheet([
+    [{v:'CLIMATE RISK ASSESSMENT — HAZARD MATRIX',t:'s',s:{font:{bold:true,color:{rgb:WHITE},sz:16},fill:{fgColor:{rgb:DARK}},alignment:{horizontal:'left',vertical:'center'}}}],
+    [{v:`City: ${cityLabel}`,t:'s',s:{font:{sz:10,color:{rgb:'FFAAAAAA'}},fill:{fgColor:{rgb:DARK}},alignment:{horizontal:'left',vertical:'center'}}}],
+    [{v:`Design phase: ${pm.label}`,t:'s',s:{font:{sz:10,color:{rgb:'FFAAAAAA'}},fill:{fgColor:{rgb:DARK}},alignment:{horizontal:'left',vertical:'center'}}}],
+    [{v:`Generated: ${new Date().toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'})}`,t:'s',s:{font:{sz:10,color:{rgb:'FFAAAAAA'}},fill:{fgColor:{rgb:DARK}},alignment:{horizontal:'left',vertical:'center'}}}],
+  ]);
+  titleWs['!cols']=[{wch:60}];
+  titleWs['!rows']=[{hpt:36},{hpt:20},{hpt:20},{hpt:20}];
+  XLSX.utils.book_append_sheet(wb,titleWs,'Cover');
+  XLSX.utils.book_append_sheet(wb,ws,'Hazard Matrix');
+  const fname=`CRA_${cityLabel.replace(/\s+/g,'_')}_${phase.toUpperCase()}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb,fname);
+  btn.disabled=false;
+  btn.textContent='↓ Download as Excel';
+}
+</script>
+</body>
+</html>

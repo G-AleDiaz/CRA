@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRA Projects & Directory</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; background: #fff; color: #1a1a18; line-height: 1.5; padding: 24px; }
+  :root {
+    --accent: #2E6B4F; --dark: #1A3D2B; --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.25); --bg-secondary: #f7f7f5;
+    --text-secondary: #666; --radius-md: 8px; --radius-lg: 12px;
+  }
+
+  .section { padding: 1.5rem 0; }
+  .section + .section { border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 2rem; }
+  .section-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem; }
+  .section-title { font-size: 20px; font-weight: 500; color: #1a1a18; }
+  .section-count { font-size: 12px; color: var(--text-secondary); }
+
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+
+  .project-card { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: #fff; overflow: hidden; }
+  .project-img { height: 140px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .project-img-placeholder { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase; }
+  .project-img-label { position: absolute; bottom: 10px; left: 12px; background: rgba(0,0,0,0.45); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+  .project-body { padding: 1rem 1.1rem; }
+  .project-name { font-size: 14px; font-weight: 500; color: #1a1a18; margin-bottom: 3px; }
+  .project-meta { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+  .project-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--bg-secondary); color: var(--text-secondary); border: 0.5px solid var(--border); }
+  .tag-hazard { background: #E1F5EE; color: #085041; border-color: #9FE1CB; }
+  .project-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 0.5px solid var(--border); }
+  .project-team { font-size: 11px; color: var(--text-secondary); }
+  .report-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--accent); text-decoration: none; padding: 4px 10px; border: 0.5px solid var(--accent); border-radius: var(--radius-md); background: none; transition: background 0.12s; font-family: inherit; cursor: pointer; }
+  .report-link:hover { background: #E1F5EE; }
+
+  .add-card { border: 1.5px dashed var(--border); border-radius: var(--radius-lg); min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; color: var(--text-secondary); }
+  .add-card:hover { border-color: var(--accent); background: #f0f7f4; color: var(--accent); }
+  .add-card .plus { font-size: 24px; font-weight: 300; }
+  .add-card .add-label { font-size: 13px; font-weight: 500; }
+  .add-card .add-sub { font-size: 11px; }
+
+  .directory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+  .person-card { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: #fff; padding: 1.25rem; display: flex; flex-direction: column; gap: 12px; }
+  .person-top { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 500; color: #fff; }
+  .person-name { font-size: 14px; font-weight: 500; color: #1a1a18; }
+  .person-role { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+  .person-divider { height: 0.5px; background: var(--border); }
+  .expertise-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 6px; }
+  .expertise-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .exp-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #E1F5EE; color: #085041; border: 0.5px solid #9FE1CB; }
+  .person-email { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--accent); text-decoration: none; transition: opacity 0.12s; word-break: break-all; }
+  .person-email:hover { opacity: 0.75; }
+
+  .add-person-card { border: 1.5px dashed var(--border); border-radius: var(--radius-lg); min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: border-color 0.15s, background 0.15s; color: var(--text-secondary); }
+  .add-person-card:hover { border-color: var(--accent); background: #f0f7f4; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ PROJECTS ═══════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Projects</div>
+    <span class="section-count">3 projects</span>
+  </div>
+
+  <div class="projects-grid">
+
+    <div class="project-card">
+      <div class="project-img" style="background:#1A3D2B;">
+        <div class="project-img-placeholder">Add image</div>
+        <div class="project-img-label">San José, Costa Rica</div>
+      </div>
+      <div class="project-body">
+        <div class="project-name">San José Mixed-Use Development</div>
+        <div class="project-meta">Urban · Costa Rica</div>
+        <div class="project-tags">
+          <span class="tag-hazard tag">Landslide</span>
+          <span class="tag-hazard tag">Heavy Rain</span>
+          <span class="tag-hazard tag">Heat Wave</span>
+        </div>
+        <div class="project-footer">
+          <div class="project-team">Alejandra D. · Fabiola S.</div>
+          <a class="report-link" href="#" target="_blank">Report ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-img" style="background:#2D5A4A;">
+        <div class="project-img-placeholder">Add image</div>
+        <div class="project-img-label">Bogotá, Colombia</div>
+      </div>
+      <div class="project-body">
+        <div class="project-name">Bogotá Office Campus</div>
+        <div class="project-meta">Office · Colombia</div>
+        <div class="project-tags">
+          <span class="tag-hazard tag">Earthquake</span>
+          <span class="tag-hazard tag">River Flooding</span>
+          <span class="tag-hazard tag">Volcanic Activity</span>
+        </div>
+        <div class="project-footer">
+          <div class="project-team">Mauricio P. · Julia R.</div>
+          <a class="report-link" href="#" target="_blank">Report ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-img" style="background:#3B6B52;">
+        <div class="project-img-placeholder">Add image</div>
+        <div class="project-img-label">Guatemala City, Guatemala</div>
+      </div>
+      <div class="project-body">
+        <div class="project-name">Guatemala City Residential Tower</div>
+        <div class="project-meta">Residential · Guatemala</div>
+        <div class="project-tags">
+          <span class="tag-hazard tag">Earthquake</span>
+          <span class="tag-hazard tag">Landslide</span>
+          <span class="tag-hazard tag">Hurricane</span>
+        </div>
+        <div class="project-footer">
+          <div class="project-team">Maricela V. · Alejandra D.</div>
+          <a class="report-link" href="#" target="_blank">Report ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="add-card">
+      <div class="plus">+</div>
+      <div class="add-label">Add project</div>
+      <div class="add-sub">Edit HTML to add more</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ DIRECTORY ═══════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Directory</div>
+    <span class="section-count">5 people</span>
+  </div>
+
+  <div class="directory-grid">
+
+    <div class="person-card">
+      <div class="person-top">
+        <div class="avatar" style="background:#1A3D2B;">AD</div>
+        <div>
+          <div class="person-name">Alejandra Díaz de León</div>
+          <div class="person-role">Research Lead · Mexico City</div>
+        </div>
+      </div>
+      <div class="person-divider"></div>
+      <div>
+        <div class="expertise-label">Expertise</div>
+        <div class="expertise-tags">
+          <span class="exp-tag">Flood</span>
+          <span class="exp-tag">Heat Wave</span>
+          <span class="exp-tag">CRA Methodology</span>
+        </div>
+      </div>
+      <a class="person-email" href="mailto:alejandra.diazdeleon@gensler.com">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#2E6B4F" stroke-width="1.2"/><path d="M1.5 4L8 9.5L14.5 4" stroke="#2E6B4F" stroke-width="1.2"/></svg>
+        alejandra.diazdeleon@gensler.com
+      </a>
+    </div>
+
+    <div class="person-card">
+      <div class="person-top">
+        <div class="avatar" style="background:#2D5A4A;">JR</div>
+        <div>
+          <div class="person-name">Julia Ragragio-Ruiz</div>
+          <div class="person-role">Researcher · Los Angeles</div>
+        </div>
+      </div>
+      <div class="person-divider"></div>
+      <div>
+        <div class="expertise-label">Expertise</div>
+        <div class="expertise-tags">
+          <span class="exp-tag">Wildfire</span>
+          <span class="exp-tag">Earthquake</span>
+          <span class="exp-tag">Coastal Flooding</span>
+        </div>
+      </div>
+      <a class="person-email" href="mailto:julia.ragragio-ruiz@gensler.com">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#2E6B4F" stroke-width="1.2"/><path d="M1.5 4L8 9.5L14.5 4" stroke="#2E6B4F" stroke-width="1.2"/></svg>
+        julia.ragragio-ruiz@gensler.com
+      </a>
+    </div>
+
+    <div class="person-card">
+      <div class="person-top">
+        <div class="avatar" style="background:#4A7C6F;">MP</div>
+        <div>
+          <div class="person-name">Mauricio Pieschacón</div>
+          <div class="person-role">Researcher · Bogotá</div>
+        </div>
+      </div>
+      <div class="person-divider"></div>
+      <div>
+        <div class="expertise-label">Expertise</div>
+        <div class="expertise-tags">
+          <span class="exp-tag">Seismic</span>
+          <span class="exp-tag">Landslide</span>
+          <span class="exp-tag">Volcanic Activity</span>
+        </div>
+      </div>
+      <a class="person-email" href="mailto:mauricio.pieschacon@gensler.com">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#2E6B4F" stroke-width="1.2"/><path d="M1.5 4L8 9.5L14.5 4" stroke="#2E6B4F" stroke-width="1.2"/></svg>
+        mauricio.pieschacon@gensler.com
+      </a>
+    </div>
+
+    <div class="person-card">
+      <div class="person-top">
+        <div class="avatar" style="background:#1D6B52;">FS</div>
+        <div>
+          <div class="person-name">Fabiola Sánchez</div>
+          <div class="person-role">Researcher · Mexico City</div>
+        </div>
+      </div>
+      <div class="person-divider"></div>
+      <div>
+        <div class="expertise-label">Expertise</div>
+        <div class="expertise-tags">
+          <span class="exp-tag">Drought</span>
+          <span class="exp-tag">Heat Wave</span>
+          <span class="exp-tag">Wind</span>
+        </div>
+      </div>
+      <a class="person-email" href="mailto:fabiola.sanchez@gensler.com">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#2E6B4F" stroke-width="1.2"/><path d="M1.5 4L8 9.5L14.5 4" stroke="#2E6B4F" stroke-width="1.2"/></svg>
+        fabiola.sanchez@gensler.com
+      </a>
+    </div>
+
+    <div class="person-card">
+      <div class="person-top">
+        <div class="avatar" style="background:#3B6B52;">MV</div>
+        <div>
+          <div class="person-name">Maricela Villegas</div>
+          <div class="person-role">Researcher · Guatemala City</div>
+        </div>
+      </div>
+      <div class="person-divider"></div>
+      <div>
+        <div class="expertise-label">Expertise</div>
+        <div class="expertise-tags">
+          <span class="exp-tag">Hurricane</span>
+          <span class="exp-tag">River Flooding</span>
+          <span class="exp-tag">Landslide</span>
+        </div>
+      </div>
+      <a class="person-email" href="mailto:maricela.villegas@gensler.com">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="#2E6B4F" stroke-width="1.2"/><path d="M1.5 4L8 9.5L14.5 4" stroke="#2E6B4F" stroke-width="1.2"/></svg>
+        maricela.villegas@gensler.com
+      </a>
+    </div>
+
+    <div class="add-person-card">
+      <div style="font-size:24px;font-weight:300;">+</div>
+      <div style="font-size:13px;font-weight:500;">Add person</div>
+      <div style="font-size:11px;">Edit HTML to add more</div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
